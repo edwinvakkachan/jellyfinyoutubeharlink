@@ -11,12 +11,15 @@ function sanitize(name) {
     return name.replace(/[<>:"/\\|?*]+/g, "").trim();
 }
 
-function shortenFileName(name, maxLength = 180) {
-    if (name.length <= maxLength) return name;
+function buildFileName(title, videoId) {
+    const maxTitleLength = 80;
 
-    const ext = path.extname(name);
-    const base = path.basename(name, ext);
-    return base.substring(0, maxLength - ext.length) + ext;
+    let shortTitle = title;
+    if (title.length > maxTitleLength) {
+        shortTitle = title.substring(0, maxTitleLength);
+    }
+
+    return `${shortTitle} [${videoId}].mp4`;
 }
 
 function ensureDir(dir) {
@@ -50,8 +53,11 @@ function linkVideos() {
             ensureDir(destFolder);
 
             // Better naming format
-            let fileName = `${channel} - ${title} [${videoId}].mp4`;
-            fileName = shortenFileName(fileName);
+
+
+
+
+            let fileName = buildFileName(title, videoId);
 
             const destVideo = path.join(destFolder, fileName);
 

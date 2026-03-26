@@ -1,0 +1,10 @@
+{
+  "name": "youtube-jellyfin-hardlink",
+  "version": "1.0.0",
+  "description": "TubeArchivist to Jellyfin hardlink sync",
+  "type": "module",
+  "main": "app.js",
+  "dependencies": {
+    "dotenv": "^17.0.0"
+  }
+}

@@ -39,21 +39,36 @@ function hardlinkIfExists(src, dest) {
     }
 }
 
-function createNFO(destFolder, baseName, data) {
+function createEpisodeNFO(destFolder, baseName, data) {
     const nfoPath = path.join(destFolder, `${baseName}.nfo`);
     if (fs.existsSync(nfoPath)) return;
 
     const nfoContent = `
-<movie>
+<episodedetails>
     <title>${data.title}</title>
     <plot>${data.description || ""}</plot>
     <studio>${data.uploader}</studio>
     <aired>${data.upload_date || ""}</aired>
     <id>${data.id}</id>
-</movie>
+</episodedetails>
 `;
 
     fs.writeFileSync(nfoPath, nfoContent);
+}
+
+function createTVShowNFO(channelFolder, channelName, channelId) {
+    const tvshowPath = path.join(channelFolder, `tvshow.nfo`);
+    if (fs.existsSync(tvshowPath)) return;
+
+    const content = `
+<tvshow>
+    <title>${channelName}</title>
+    <studio>YouTube</studio>
+    <id>${channelId}</id>
+</tvshow>
+`;
+
+    fs.writeFileSync(tvshowPath, content);
 }
 
 function linkVideos() {
@@ -80,18 +95,22 @@ function linkVideos() {
             const srcSubtitle = path.join(channelPath, `${videoId}.en.srt`);
             const srcThumb = path.join(channelPath, `${videoId}.jpg`);
 
-            const destFolder = path.join(DEST, channel);
-            ensureDir(destFolder);
+            const channelFolder = path.join(DEST, channel);
+            const seasonFolder = path.join(channelFolder, "Season 01");
 
-            const destVideo = path.join(destFolder, `${baseName}.mp4`);
-            const destSubtitle = path.join(destFolder, `${baseName}.srt`);
-            const destThumb = path.join(destFolder, `${baseName}.jpg`);
+            ensureDir(seasonFolder);
+
+            createTVShowNFO(channelFolder, channel, channelId);
+
+            const destVideo = path.join(seasonFolder, `${baseName}.mp4`);
+            const destSubtitle = path.join(seasonFolder, `${baseName}.srt`);
+            const destThumb = path.join(seasonFolder, `${baseName}.jpg`);
 
             hardlinkIfExists(srcVideo, destVideo);
             hardlinkIfExists(srcSubtitle, destSubtitle);
             hardlinkIfExists(srcThumb, destThumb);
 
-            createNFO(destFolder, baseName, data);
+            createEpisodeNFO(seasonFolder, baseName, data);
         });
     });
 }
@@ -102,13 +121,15 @@ function cleanupDeletedVideos() {
     const channels = fs.readdirSync(DEST);
 
     channels.forEach(channel => {
-        const channelPath = path.join(DEST, channel);
-        const files = fs.readdirSync(channelPath);
+        const seasonPath = path.join(DEST, channel, "Season 01");
+        if (!fs.existsSync(seasonPath)) return;
+
+        const files = fs.readdirSync(seasonPath);
 
         files.forEach(file => {
             if (!file.endsWith(".mp4")) return;
 
-            const destFile = path.join(channelPath, file);
+            const destFile = path.join(seasonPath, file);
 
             try {
                 const stat = fs.statSync(destFile);

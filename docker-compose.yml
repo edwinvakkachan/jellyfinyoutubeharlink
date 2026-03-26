@@ -4,15 +4,9 @@ services:
   youtubejellyfinhardlink:
     build: .
     container_name: youtubejellyfinhardlink
-    restart: no
-    environment:
-      SOURCE_DIR: ${SOURCE_DIR}
-      DEST_DIR: ${DEST_DIR}
-    dns:
-      - 1.1.1.1
-      - 1.0.0.1
-
-
-
-
-
+    restart: "no"
+    env_file:
+      - .env
+    volumes:
+      - ${HOST_YOUTUBE}:/youtube
+      - ${HOST_JELLYFIN}:/jellyfin

@@ -12,7 +12,7 @@ function sanitize(name) {
 }
 
 function buildFileName(title, videoId) {
-    const maxTitleLength = 80;
+    const maxTitleLength = 70;
 
     let shortTitle = title;
     if (title.length > maxTitleLength) {
@@ -52,13 +52,7 @@ function linkVideos() {
             const destFolder = path.join(DEST, channel);
             ensureDir(destFolder);
 
-            // Better naming format
-
-
-
-
-            let fileName = buildFileName(title, videoId);
-
+            const fileName = buildFileName(title, videoId);
             const destVideo = path.join(destFolder, fileName);
 
             if (!fs.existsSync(destVideo)) {

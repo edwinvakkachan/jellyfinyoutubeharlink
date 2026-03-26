@@ -43,12 +43,16 @@ function createEpisodeNFO(destFolder, baseName, data) {
     const nfoPath = path.join(destFolder, `${baseName}.nfo`);
     if (fs.existsSync(nfoPath)) return;
 
+    const airedDate = data.upload_date
+        ? `${data.upload_date.substring(0,4)}-${data.upload_date.substring(4,6)}-${data.upload_date.substring(6,8)}`
+        : "";
+
     const nfoContent = `
 <episodedetails>
     <title>${data.title}</title>
     <plot>${data.description || ""}</plot>
     <studio>${data.uploader}</studio>
-    <aired>${data.upload_date || ""}</aired>
+    <aired>${airedDate}</aired>
     <id>${data.id}</id>
 </episodedetails>
 `;
@@ -94,21 +98,23 @@ function linkVideos() {
             const srcVideo = path.join(channelPath, `${videoId}.mp4`);
             const srcSubtitle = path.join(channelPath, `${videoId}.en.srt`);
             const srcThumb = path.join(channelPath, `${videoId}.jpg`);
+            const srcJson = path.join(channelPath, `${videoId}.info.json`);
 
             const channelFolder = path.join(DEST, channel);
             const seasonFolder = path.join(channelFolder, "Season 01");
 
             ensureDir(seasonFolder);
-
             createTVShowNFO(channelFolder, channel, channelId);
 
             const destVideo = path.join(seasonFolder, `${baseName}.mp4`);
             const destSubtitle = path.join(seasonFolder, `${baseName}.srt`);
             const destThumb = path.join(seasonFolder, `${baseName}.jpg`);
+            const destJson = path.join(seasonFolder, `${baseName}.info.json`);
 
             hardlinkIfExists(srcVideo, destVideo);
             hardlinkIfExists(srcSubtitle, destSubtitle);
             hardlinkIfExists(srcThumb, destThumb);
+            hardlinkIfExists(srcJson, destJson);
 
             createEpisodeNFO(seasonFolder, baseName, data);
         });

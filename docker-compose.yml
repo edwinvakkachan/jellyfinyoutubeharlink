@@ -9,8 +9,7 @@ services:
       SOURCE_DIR: ${SOURCE_DIR}
       DEST_DIR: ${DEST_DIR}
     volumes:
-      - ${HOST_YOUTUBE}:/youtube
-      - ${HOST_JELLYFIN}:/jellyfin
+      - /srv/dev-disk-by-uuid-85a374a8-c9c0-4593-98d7-06257d09f516/2tb:/data
     dns:
       - 1.1.1.1
       - 1.0.0.1

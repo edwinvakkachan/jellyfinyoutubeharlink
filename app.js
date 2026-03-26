@@ -11,21 +11,49 @@ function sanitize(name) {
     return name.replace(/[<>:"/\\|?*]+/g, "").trim();
 }
 
-function buildFileName(title, videoId) {
+function buildBaseName(title, videoId) {
     const maxTitleLength = 70;
-
     let shortTitle = title;
+
     if (title.length > maxTitleLength) {
         shortTitle = title.substring(0, maxTitleLength);
     }
 
-    return `${shortTitle} [${videoId}].mp4`;
+    return `${shortTitle} [${videoId}]`;
 }
 
 function ensureDir(dir) {
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
     }
+}
+
+function hardlinkIfExists(src, dest) {
+    if (fs.existsSync(src) && !fs.existsSync(dest)) {
+        try {
+            execSync(`ln "${src}" "${dest}"`);
+            console.log("Linked:", dest);
+        } catch {
+            console.log("Error linking:", dest);
+        }
+    }
+}
+
+function createNFO(destFolder, baseName, data) {
+    const nfoPath = path.join(destFolder, `${baseName}.nfo`);
+    if (fs.existsSync(nfoPath)) return;
+
+    const nfoContent = `
+<movie>
+    <title>${data.title}</title>
+    <plot>${data.description || ""}</plot>
+    <studio>${data.uploader}</studio>
+    <aired>${data.upload_date || ""}</aired>
+    <id>${data.id}</id>
+</movie>
+`;
+
+    fs.writeFileSync(nfoPath, nfoContent);
 }
 
 function linkVideos() {
@@ -46,23 +74,24 @@ function linkVideos() {
             const title = sanitize(data.title || videoId);
             const channel = sanitize(data.uploader || "YouTube");
 
+            const baseName = buildBaseName(title, videoId);
+
             const srcVideo = path.join(channelPath, `${videoId}.mp4`);
-            if (!fs.existsSync(srcVideo)) return;
+            const srcSubtitle = path.join(channelPath, `${videoId}.en.srt`);
+            const srcThumb = path.join(channelPath, `${videoId}.jpg`);
 
             const destFolder = path.join(DEST, channel);
             ensureDir(destFolder);
 
-            const fileName = buildFileName(title, videoId);
-            const destVideo = path.join(destFolder, fileName);
+            const destVideo = path.join(destFolder, `${baseName}.mp4`);
+            const destSubtitle = path.join(destFolder, `${baseName}.srt`);
+            const destThumb = path.join(destFolder, `${baseName}.jpg`);
 
-            if (!fs.existsSync(destVideo)) {
-                try {
-                    execSync(`ln "${srcVideo}" "${destVideo}"`);
-                    console.log("Linked:", destVideo);
-                } catch (err) {
-                    console.log("Error linking:", fileName);
-                }
-            }
+            hardlinkIfExists(srcVideo, destVideo);
+            hardlinkIfExists(srcSubtitle, destSubtitle);
+            hardlinkIfExists(srcThumb, destThumb);
+
+            createNFO(destFolder, baseName, data);
         });
     });
 }
@@ -88,7 +117,7 @@ function cleanupDeletedVideos() {
                     fs.unlinkSync(destFile);
                     console.log("Removed orphan:", destFile);
                 }
-            } catch (e) {}
+            } catch {}
         });
     });
 }

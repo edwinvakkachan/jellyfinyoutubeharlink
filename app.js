@@ -11,6 +11,14 @@ function sanitize(name) {
     return name.replace(/[<>:"/\\|?*]+/g, "").trim();
 }
 
+function shortenFileName(name, maxLength = 180) {
+    if (name.length <= maxLength) return name;
+
+    const ext = path.extname(name);
+    const base = path.basename(name, ext);
+    return base.substring(0, maxLength - ext.length) + ext;
+}
+
 function ensureDir(dir) {
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
@@ -41,11 +49,19 @@ function linkVideos() {
             const destFolder = path.join(DEST, channel);
             ensureDir(destFolder);
 
-            const destVideo = path.join(destFolder, `${title}.mp4`);
+            // Better naming format
+            let fileName = `${channel} - ${title} [${videoId}].mp4`;
+            fileName = shortenFileName(fileName);
+
+            const destVideo = path.join(destFolder, fileName);
 
             if (!fs.existsSync(destVideo)) {
-                execSync(`ln "${srcVideo}" "${destVideo}"`);
-                console.log("Linked:", destVideo);
+                try {
+                    execSync(`ln "${srcVideo}" "${destVideo}"`);
+                    console.log("Linked:", destVideo);
+                } catch (err) {
+                    console.log("Error linking:", fileName);
+                }
             }
         });
     });
@@ -68,7 +84,6 @@ function cleanupDeletedVideos() {
             try {
                 const stat = fs.statSync(destFile);
 
-                // If hardlink count == 1 → source deleted
                 if (stat.nlink === 1) {
                     fs.unlinkSync(destFile);
                     console.log("Removed orphan:", destFile);
